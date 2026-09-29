@@ -80,6 +80,17 @@ Primary product principle:
 
 > **Reader. Controller. Cloud edge. One tiny device.**
 
+## 1.1 Hard physical-design invariants
+
+Two Rev.A design priorities are now explicit:
+
+1. **Primary optimization target: minimum practical PCB/enclosure size** consistent with reliable NFC/RF performance, electrical robustness, thermal margin, field wiring robustness, manufacturability and first-prototype success.
+2. **Rev.A MUST use a 4-layer PCB unless a later explicit human decision approves otherwise.** Saving a few dollars by reducing the layer count is **not** a design objective.
+
+Miniaturization is a real product requirement, not decorative wording. Astra should actively look for area reductions through justified component/package selection, two-sided placement where appropriate, 0201 passives where they materially help, compact connectors/interconnect strategy, and careful functional integration.
+
+However, size must never be “won” by sacrificing RF integrity, power robustness, Door Health measurement quality, thermal headroom, manufacturing yield, testability or safety.
+
 ---
 
 # 2. Read before doing anything
@@ -233,6 +244,42 @@ Required protection study:
 - brownout;
 - bulk capacitance;
 - regulator thermal margin.
+
+## 6.1 Real-world poor-power requirement
+
+Do **not** design Rev.A around a clean laboratory 12.000 V bench supply.
+
+On real access-control sites the device may be powered from inexpensive 12 V or 24 V security power supplies, including common charger/backup units with a lead-acid battery. The quality of those supplies may be mediocre.
+
+Phase A must therefore characterize and design for realistic field conditions including:
+
+- DC input substantially above/below nominal within a defined qualified range;
+- low-frequency ripple from inexpensive supplies;
+- switching noise;
+- startup overshoot;
+- brownout and recovery;
+- charger/battery switchover;
+- momentary supply sag when the lock operates;
+- shared-ground disturbances;
+- transients coupled from long field wiring;
+- inductive energy/noise from the lock;
+- repeated power interruption and rapid restart.
+
+Astra must propose a **qualified operating range and a separate transient-survival target**, supported by component ratings and margin. Do not merely write “10–30 V” if the selected protection/regulator chain cannot prove it.
+
+Investigate appropriate combinations of:
+
+- input TVS;
+- reverse-polarity protection;
+- eFuse/PTC/fuse where justified;
+- input LC/π filtering where stable and appropriate;
+- local bulk energy storage;
+- UVLO with useful hysteresis;
+- regulator headroom;
+- brownout detection/reset;
+- separation/filtering between noisy lock power and sensitive MCU/NFC/RF/measurement rails.
+
+The prototype test plan must include intentionally poor/noisy supply conditions, not only nominal bench power.
 
 Prefer avoiding a large electromechanical relay if a robust solid-state solution is practical.
 
@@ -464,11 +511,32 @@ Plan it before firmware grows.
 
 # 15. User interface
 
-Rev.A should investigate:
+Rev.A shall include provision for a **very small, modest-volume audible indicator**.
 
-- RGB LED / halo;
-- buzzer;
-- optional haptic only if justified.
+Buzzer requirements:
+
+- SMD part preferred;
+- physically small;
+- clearly audible at the reader at short distance but not intended to be an alarm-class sounder;
+- software-controllable;
+- must support complete software disable;
+- support quiet/hospital/night behavior;
+- avoid unnecessary standby current;
+- compare piezo vs magnetic SMD options on size, drive circuit, current and achievable SPL.
+
+Rev.A shall also reserve hardware for visual indication.
+
+Minimum intent:
+
+- at least **two independently controllable LED indications**, or an equivalently flexible arrangement such as an RGB status LED plus a second independent indicator;
+- firmware-controlled brightness/duty cycle;
+- ability to turn all LEDs fully off;
+- footprint/routing may be populated or DNP depending on enclosure/optical design;
+- consider light-pipe / diffuser geometry and NFC/RF interaction.
+
+Do not spend large PCB area on decorative lighting, but do not paint the product into a corner that prevents future front-panel illumination.
+
+Optional haptic feedback may be investigated only if it is justified by area/power/product value.
 
 Support product modes such as:
 
@@ -536,9 +604,22 @@ Explicitly assess installation near:
 Preferred default:
 
 - 0402 passives where sensible;
-- 0201 explicitly allowed and welcomed where it materially improves critical placement.
+- **0201 explicitly allowed and encouraged** where it materially reduces critical PCB area or improves placement around dense IC/RF sections.
 
-Do not use 0201 everywhere merely because it is small.
+Rev.A manufacturing must **not** be constrained to low-cost “economy” assembly if that forces 0402 and makes the product materially larger. Use a production/standard PCBA service capable of reliable 0201 placement when needed.
+
+Do not use 0201 everywhere merely because it is small. Favor it where the area gain is real and where values/ratings/availability are suitable.
+
+For every proposed 0201-heavy region, verify the selected assembler's current:
+
+- minimum package capability;
+- spacing rules;
+- stencil/paste requirements;
+- AOI/inspection capability;
+- component sourcing/feeder requirements;
+- panel/fiducial requirements.
+
+Do not assume that a fab which can manufacture the bare PCB can also assemble the chosen package mix economically.
 
 QFN/BGA/WLCSP are allowed when justified.
 
@@ -552,7 +633,9 @@ No “probably compatible”.
 
 # 19. Stack-up
 
-Strong default: **4-layer PCB**.
+**Mandatory Rev.A default: 4-layer PCB.**
+
+Astra must not reduce Rev.A to 2 layers as a cost optimization. A layer-count reduction requires a later explicit human approval after evidence that RF, return paths, power integrity, Door Health sensing and manufacturability are not compromised.
 
 Initial conceptual structure:
 
@@ -1029,6 +1112,8 @@ Phase A is acceptable only if a human reviewer can answer:
 - Where are the RF antennas and keepouts?
 - What limits minimum board size?
 - What are the major thermal risks?
+- What ambient temperature range is qualified, and why?
+- What happens on a cheap/noisy 12/24 V field PSU, brownout, charger/battery switchover and lock-induced supply sag?
 - What happens offline?
 - What is stored securely?
 - What does Rev.A explicitly not solve?
@@ -1054,6 +1139,21 @@ When miniaturization conflicts with:
 document the conflict and prefer reliability unless the user explicitly chooses otherwise.
 
 A tiny PCB is a product feature only after it works.
+
+## 30.1 Temperature requirement
+
+Rev.A is expected to be installed in real building environments and may be located near entrances where temperature can be substantially worse than a climate-controlled office.
+
+Use the following **preliminary design target** unless Phase A identifies a documented blocker:
+
+- target ambient operation: **-40 °C to +60 °C**;
+- prefer critical semiconductors/components rated at least **-40 °C to +85 °C** (or better) where practical;
+- perform worst-case regulator/lock-driver/PCB thermal analysis at the hot end;
+- check oscillator, NFC matching-relevant parts, current-sense accuracy, protection devices and capacitors across temperature;
+- do not assume electrolytic capacitance/ESR or ceramic effective capacitance is constant across temperature/bias;
+- document any component that becomes the temperature-limiting item.
+
+If the realistic Rev.A product class cannot honestly meet -40…+60 °C, report the exact limitation and evidence rather than silently relaxing the target.
 
 ---
 
