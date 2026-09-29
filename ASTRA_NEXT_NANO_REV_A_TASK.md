@@ -972,6 +972,83 @@ Define what Rev.A can reliably classify.
 
 Do not claim predictive failure detection until data supports it.
 
+## 24.1 Field-power and environmental qualification plan
+
+Phase A must already define a future bench qualification matrix for bad real-world access-control power.
+
+At minimum include:
+
+- nominal 12 V and 24 V operation;
+- low-line and high-line operation across the proposed qualified DC range;
+- slow input ramp;
+- fast power interruption;
+- repeated restart;
+- brownout and recovery;
+- supply sag synchronized with lock activation;
+- battery/charger switchover behavior representative of common access-control PSUs;
+- injected low-frequency ripple;
+- injected switching-noise/ripple representative of inexpensive SMPS units;
+- lock inductive transient / back-EMF handling;
+- long-cable transient/ESD test strategy;
+- reverse-polarity test strategy;
+- abnormal input/transient survival strategy within the ratified limits.
+
+The qualification plan must distinguish:
+
+1. **normal operating range** — full functional compliance;
+2. **degraded/brownout range** — defined safe behavior, no accidental unlock, no persistent-state corruption;
+3. **survival/transient range** — hardware survives or fails safely as explicitly defined.
+
+For any brownout, restart, or supply disturbance:
+
+- the device must not spuriously energize the lock;
+- the device must not silently corrupt credential/config/event state;
+- the device must either continue normal operation or enter a defined safe state.
+
+## 24.2 Temperature qualification plan
+
+Use the preliminary product target:
+
+```text
+Ambient operating target: -40 °C to +60 °C
+Preferred critical component rating: at least -40 °C to +85 °C
+```
+
+Phase A must identify:
+
+- which component is likely to set the cold limit;
+- which component/thermal hotspot is likely to set the hot limit;
+- expected regulator dissipation at high input voltage;
+- expected lock-driver dissipation at representative loads;
+- measurement drift of current/voltage sensing;
+- oscillator/RTC/timekeeping behavior;
+- capacitor derating and effective capacitance;
+- NFC/RF concerns across temperature;
+- startup behavior at temperature extremes.
+
+Create a realistic Rev.A environmental test proposal rather than assuming room-temperature lab success proves field readiness.
+
+## 24.3 Audible/visual UX acceptance
+
+The Rev.A user-interface design should preserve the following acceptance intent:
+
+### Buzzer
+- very small SMD device;
+- subtle/local audible confirmation, not alarm-volume;
+- software on/off control;
+- complete silent mode;
+- quiet/hospital/night profiles;
+- no unnecessary continuous current draw.
+
+### LEDs
+- at least two independently controllable visual indication channels, or RGB + second independent channel;
+- full software off;
+- software brightness/duty control;
+- ability to leave optional lighting DNP on early prototypes;
+- no unacceptable NFC/Wi-Fi antenna degradation due to LED placement, copper, diffuser/light-pipe geometry or enclosure.
+
+The UI must remain subordinate to RF performance, product size and standby power.
+
 ---
 
 # 25. Security test ideas
